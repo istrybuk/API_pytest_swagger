@@ -1,0 +1,6 @@
+VALID_EMAIL = 'Sivan@bk.by'
+VALID_PASSWORD = '123Qaz'
+TEST_EMAIL = 'test@4.com'
+TEST_PASS = '12345Q'
+RT_EMAIL = 'test@4.com'
+RT_PASSWORD = '12345Q'
