@@ -1,6 +1,6 @@
 import json
+import uuid
 import requests
-import settings
 
 
 class Pets:
@@ -11,9 +11,10 @@ class Pets:
 
     def post_new_register(self) -> json:
         """Запрос к Swagger сайта для регистрация нового пользователя"""
-        data = {"email": settings.TEST_EMAIL,
-                "password": settings.TEST_PASS,
-                "confirm_password": settings.TEST_PASS}
+        # e = uuid.uuid4().hex  # генерация для email
+        data = {"email": 'test@21.by',
+                "password": '12345',
+                "confirm_password": '12345'}
         res = requests.post(self.base_url + 'register', data=json.dumps(data))
         my_id = res.json()
         reg_id = my_id.get('id')
@@ -22,8 +23,8 @@ class Pets:
 
     def post_go_to_login(self) -> json:
         """Запрос к Swagger сайта для получения уникального токена пользователя по указанным email и password"""
-        data = {"email": 'test@4.com',
-                "password": '12345Q'}
+        data = {"email": 'test@21.by',
+                "password": '12345'}
         res = requests.post(self.base_url + 'login', data=json.dumps(data))
         login_token = res.json()['token']
         login_id = res.json()['id']
@@ -37,7 +38,6 @@ class Pets:
         headers = {'Authorization': f'Bearer {my_token}'}
         res = requests.delete(self.base_url + f'users/{my_id}', headers=headers)
         status = res.status_code
-        print(status)
         return status
 
     def get_list_users(self) -> json:
@@ -57,6 +57,7 @@ class Pets:
         data = {"id": my_id,
                 "name": "Tosha",
                 "type": "dog",
+                "gender": "male",
                 "age": 50,
                 "owner_id": my_id}
         res = requests.post(self.base_url + 'pet', data=json.dumps(data), headers=headers)
@@ -69,8 +70,9 @@ class Pets:
         my_token = Pets().post_go_to_login()[2]
         pet_id = Pets().post_pet_save()[1]
         headers = {'Authorization': f'Bearer {my_token}'}
-        # pic = open('tests\Photos\dog.jpg', 'rb')
-        files = {'pic': ('bb.jpg', open('tests\\Photos\\dog.jpg', 'rb'), 'image/jpg')}
+        # pic = open('tests\Photos\dog.jpg', 'rb')  # Для нормальной передачи.
+        files = {'pic': ('что-угодно.jpg',
+                         open('C:\\Users\\Scribl\\PycharmProjects\\API_TT\\tests\\photos\\dog.jpg', 'rb'), 'image/jpg')}
         res = requests.post(self.base_url + f'pet/{pet_id}/image', headers=headers, files=files)
         status = res.status_code
         link = res.json()['link']
@@ -81,9 +83,9 @@ class Pets:
         my_token = Pets().post_go_to_login()[2]
         pet_id = str(Pets().post_pet_save()[1])   # вернулся другой id пета
         headers = {'Authorization': f'Bearer {my_token}'}
-        #data = {"id": 557}
+        # data = {"id": 557}
         res = requests.put(self.base_url + f'pet/{pet_id}/like', headers=headers)
-        #res = requests.put(self.base_url + f'pet/{pet_id}/like', data=json.dumps(data), headers=headers)
+        # res = requests.put(self.base_url + f'pet/{pet_id}/like', data=json.dumps(data), headers=headers)
         status = res.status_code
         return status, pet_id
 
@@ -103,7 +105,7 @@ class Pets:
     def put_pet_comment(self) -> json:
         """Запрос к Swagger сайта для добавления комментария питомцу"""
         my_token = Pets().post_go_to_login()[2]
-        pet_id = Pets().post_pet_save()[1]
+        pet_id = Pets().get_pet_info()[1]
         my_id = Pets().get_list_users()[1]
         message = 'Hello world!'
         headers = {'Authorization': f'Bearer {my_token}'}
@@ -125,7 +127,12 @@ class Pets:
         headers = {'Authorization': f'Bearer {my_token}'}
         res = requests.get(self.base_url + f'pet/{pet_id}', headers=headers)
         status = res.status_code
-        return status
+        id_pet = res.json()['pet']['id']
+        name_pet = res.json()['pet']['name']
+        gender = res.json()['pet']['gender']
+        owner_id = res.json()['pet']['owner_id']
+        types = res.json()['pet']['type']
+        return status, id_pet, name_pet, gender, owner_id, types
 
     def post_pet_list(self) -> json:
         """Запрос к Swagger сайта для получения информации о питомцах пользователя"""
@@ -148,16 +155,56 @@ class Pets:
         headers = {'Authorization': f'Bearer {my_token}'}
         res = requests.delete(self.base_url + f'pet/{pet_id}', headers=headers)
         status = res.status_code
-        print(status)
         return status
 
+    def post_registered_and_delete(self) -> json:
+        e = uuid.uuid4().hex
+        data = {"email": f'test1@{e}.ru',
+                "password": '1234', "confirm_password": '1234'}
+        res = requests.post(self.base_url + 'register', data=json.dumps(data))
+        my_id = res.json().get('id')
+        my_token = res.json()['token']
+        headers = {'Authorization': f'Bearer {my_token}'}
+        params = {'id': my_id}
+        res = requests.delete(self.base_url + f'users/{my_id}', headers=headers, params=params)
+        status_delete_user = res.status_code
+        res = requests.post(self.base_url + 'login', data=json.dumps(data))
+        deletion_verification_status = res.status_code
+        detail = res.json()['detail']
+        return deletion_verification_status, status_delete_user, detail
 
+    def register_add_pet_delete_pet_to_user(self) -> json:
+        e = uuid.uuid4().hex
+        data = {"email": f'test1@{e}.ru',
+                "password": '1234', "confirm_password": '1234'}
+        res = requests.post(self.base_url + 'register', data=json.dumps(data))
+        my_id = res.json().get('id')
+        my_token = res.json()['token']
+        headers = {'Authorization': f'Bearer {my_token}'}
+        data = {"id": my_id,
+                "name": "Tosha",
+                "type": "dog",
+                "age": 50,
+                "owner_id": my_id}
+        res = requests.post(self.base_url + 'pet', data=json.dumps(data), headers=headers)
+        pet_id = res.json()['id']
+        headers = {'Authorization': f'Bearer {my_token}'}
+        res = requests.delete(self.base_url + f'pet/{pet_id}', headers=headers)
+        status_delete_pet = res.status_code
+        headers = {'Authorization': f'Bearer {my_token}'}
+        params = {'id': my_id}
+        res = requests.delete(self.base_url + f'users/{my_id}', headers=headers, params=params)
+        status_delete_user = res.status_code
+        return status_delete_user, status_delete_pet
+
+# Pets().register_add_pet_delete_pet_to_user()
+# Pets().post_registered_and_delete()
 # Pets().post_new_register()
-Pets().post_go_to_login()
+# Pets().post_go_to_login()
 # Pets().delete_go_to_users()
-Pets().get_list_users()
+# Pets().get_list_users()
 # Pets().post_pet()
-# Pets().post_pet_photo()
+# Pets().post_pet_photo
 # Pets().get_pet_like()
 # Pets().patch_pet_save()
 # Pets().put_pet_comment()
